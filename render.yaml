@@ -1,0 +1,11 @@
+services:
+  # Render Static Site Deployment (Recommended: Free forever, No cold-start delay)
+  - type: web
+    name: python-code-builder
+    env: static
+    buildCommand: ""
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

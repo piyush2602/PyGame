@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Python Code Builder – Complete the Missing Word | Class 9</title>
+  <meta name="description" content="Interactive Python drag-and-drop code learning game for Class 9 students. Complete missing keywords, test conditions, loops, functions, and master Python syntax.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Fullscreen Confetti Canvas for Celebrations -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <div class="app-wrapper">
+
+    <!-- Top Header & Navigation -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="python-logo-badge" title="Python Code Builder">
+          <svg viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M54.5 10C29.6 10 31.1 20.8 31.1 20.8L31.2 31.8H55V35.2H21.5C21.5 35.2 10 33.9 10 59.2C10 84.5 20.2 83.2 20.2 83.2H28.1V72.1C28.1 72.1 27.7 58.7 41.3 58.7H64.9C64.9 58.7 77.8 59 77.8 46.5V22.8C77.8 22.8 79.4 10 54.5 10ZM42.5 17.5C45.3 17.5 47.6 19.8 47.6 22.6C47.6 25.4 45.3 27.7 42.5 27.7C39.7 27.7 37.4 25.4 37.4 22.6C37.4 19.8 39.7 17.5 42.5 17.5Z" fill="#306998"/>
+            <path d="M55.5 100C80.4 100 78.9 89.2 78.9 89.2L78.8 78.2H55V74.8H88.5C88.5 74.8 100 76.1 100 50.8C100 25.5 89.8 26.8 89.8 26.8H81.9V37.9C81.9 37.9 82.3 51.3 68.7 51.3H45.1C45.1 51.3 32.2 51 32.2 63.5V87.2C32.2 87.2 30.6 100 55.5 100ZM67.5 92.5C64.7 92.5 62.4 90.2 62.4 87.4C62.4 84.6 64.7 82.3 67.5 82.3C70.3 82.3 72.6 84.6 72.6 87.4C72.6 90.2 70.3 92.5 67.5 92.5Z" fill="#FFD43B"/>
+          </svg>
+        </div>
+        <div class="brand-titles">
+          <h1>
+            Python Code Builder
+            <span class="grade-badge">Class 9</span>
+          </h1>
+          <p class="brand-tagline">Complete the Missing Word • Drag &amp; Drop Coding</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Sound Toggle Button -->
+        <button id="soundToggleBtn" class="icon-btn active" title="Toggle Sound (Mute / Unmute)" aria-label="Toggle Sound">
+          <span id="soundIcon">🔊</span>
+        </button>
+
+        <!-- Reset Button -->
+        <button id="restartBtn" class="icon-btn" title="Restart Game" aria-label="Restart Game">
+          <span>🔄</span>
+        </button>
+
+        <!-- Teacher Mode Button -->
+        <button id="teacherModeBtn" class="teacher-mode-btn" title="Classroom Teacher Settings">
+          <span>⚙️</span>
+          <span>Teacher Mode</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Heads-Up Display (HUD) Bar -->
+    <section class="hud-bar" aria-label="Game Stats Bar">
+      <div class="hud-stats-left">
+        <!-- Question Counter -->
+        <div class="hud-pill">
+          <span class="label">Question</span>
+          <span id="questionCounter" class="value">1/20</span>
+        </div>
+
+        <!-- Score Counter -->
+        <div class="hud-pill hud-score-pill">
+          <span class="label">Score</span>
+          <span id="scoreCounter" class="value">0</span>
+        </div>
+
+        <!-- Combo Streak Badge -->
+        <div id="streakBadge" class="streak-badge" style="display: none;">
+          <span>🔥</span>
+          <span id="streakCount">0</span>x Streak!
+        </div>
+      </div>
+
+      <!-- Center Progress Track -->
+      <div class="progress-center">
+        <div class="progress-header">
+          <span>Curriculum Progress</span>
+          <span id="progressPercent">0%</span>
+        </div>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+          <div id="progressBar" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <div class="hud-stats-right">
+        <!-- Lives / Hearts System -->
+        <div id="livesContainer" class="lives-container" title="Lives Remaining">
+          <span class="heart-icon">❤️</span>
+          <span class="heart-icon">❤️</span>
+          <span class="heart-icon">❤️</span>
+        </div>
+
+        <!-- Optional Timer Pill -->
+        <div id="timerPill" class="timer-pill" style="display: none;">
+          <span>⏱️</span>
+          <span id="timerDisplay">30s</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Game Stage Card -->
+    <main class="main-stage">
+      <!-- Question Metadata Header -->
+      <div class="question-header">
+        <div class="question-meta">
+          <span id="difficultyBadge" class="difficulty-badge diff-easy">Easy</span>
+          <span id="topicBadge" class="topic-badge">Input &amp; Output</span>
+        </div>
+        <div class="instruction-prompt">
+          <span class="tip-icon">💡</span>
+          <span>Drag or tap the correct option to fill the missing code blank.</span>
+        </div>
+      </div>
+
+      <h2 id="questionTitle" class="question-title">Reading User Input</h2>
+
+      <!-- Code Window Editor -->
+      <div class="code-window">
+        <div class="window-header">
+          <div class="window-controls">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="window-title">
+            <span>🐍</span>
+            <span>main.py</span>
+          </div>
+          <div style="width: 40px;"></div>
+        </div>
+        
+        <div id="codeEditorBody" class="editor-body">
+          <!-- Dynamically generated code lines with drop targets -->
+        </div>
+      </div>
+
+      <!-- Draggable Options Tray -->
+      <section class="options-tray-section">
+        <div class="options-heading">
+          <span class="options-heading-title">Code Options</span>
+          <span class="options-guide">Drag chip into blank or tap to select</span>
+        </div>
+
+        <div id="optionsContainer" class="options-container" aria-label="Available Code Chips">
+          <!-- Draggable options rendered here -->
+        </div>
+      </section>
+
+      <!-- Feedback Banner (Correct / Try Again) -->
+      <div id="feedbackContainer" class="feedback-container" role="alert">
+        <div class="feedback-header">
+          <div id="feedbackStatus" class="feedback-status">
+            <span id="feedbackIcon">🎉</span>
+            <span id="feedbackMessage">Correct!</span>
+          </div>
+          <span id="feedbackPoints" class="feedback-points-tag">+100 pts</span>
+        </div>
+        <div id="explanationBody" class="explanation-body">
+          <!-- Educational explanation appears here -->
+        </div>
+      </div>
+
+      <!-- Multi-blank Check Button (if question has > 1 blank) -->
+      <div id="multiBlankActions" class="multi-blank-actions">
+        <button id="checkAnswerBtn" class="btn btn-accent">
+          <span>✓</span> Check Answers
+        </button>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="action-footer">
+        <div class="action-left">
+          <button id="clearBlanksBtn" class="btn btn-secondary" title="Clear placed answers and try again">
+            <span>↺</span> Reset Blanks
+          </button>
+        </div>
+        <div class="action-right">
+          <button id="nextQuestionBtn" class="btn btn-primary" disabled>
+            <span>Next Question</span>
+            <span>➜</span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+  </div> <!-- End .app-wrapper -->
+
+  <!-- ============================================================
+       Teacher Mode Modal
+       ============================================================ -->
+  <div id="teacherModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="teacherModalTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="teacherModalTitle" class="modal-title">
+          <span>⚙️</span> Teacher &amp; Classroom Settings
+        </h3>
+        <button id="closeTeacherModalBtn" class="modal-close-btn" aria-label="Close modal">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Difficulty Selection -->
+        <div class="setting-group">
+          <label class="setting-label">Difficulty Level</label>
+          <div class="pill-selector" id="difficultySelector">
+            <button type="button" class="pill-choice active" data-diff="All">All Levels</button>
+            <button type="button" class="pill-choice" data-diff="Easy">Easy (Keywords &amp; I/O)</button>
+            <button type="button" class="pill-choice" data-diff="Medium">Medium (Loops &amp; Operators)</button>
+            <button type="button" class="pill-choice" data-diff="Hard">Hard (Programs &amp; Logic)</button>
+          </div>
+        </div>
+
+        <!-- Question Count -->
+        <div class="setting-group">
+          <label class="setting-label">Number of Questions</label>
+          <div class="pill-selector" id="countSelector">
+            <button type="button" class="pill-choice" data-count="5">5 Questions</button>
+            <button type="button" class="pill-choice" data-count="10">10 Questions</button>
+            <button type="button" class="pill-choice active" data-count="20">20 Questions</button>
+            <button type="button" class="pill-choice" data-count="50">50 Questions</button>
+            <button type="button" class="pill-choice" data-count="All">Full Bank (1000+)</button>
+          </div>
+        </div>
+
+
+        <!-- Timer Setting -->
+        <div class="setting-group">
+          <label class="setting-label">Question Timer Limit</label>
+          <div class="pill-selector" id="timerSelector">
+            <button type="button" class="pill-choice active" data-timer="0">Timer Off</button>
+            <button type="button" class="pill-choice" data-timer="20">20s Fast</button>
+            <button type="button" class="pill-choice" data-timer="35">35s Standard</button>
+            <button type="button" class="pill-choice" data-timer="60">60s Relaxed</button>
+          </div>
+        </div>
+
+        <!-- Lives Mode -->
+        <div class="setting-group">
+          <label class="setting-label">Lives / Challenge Mode</label>
+          <div class="pill-selector" id="livesSelector">
+            <button type="button" class="pill-choice active" data-lives="3">3 Hearts</button>
+            <button type="button" class="pill-choice" data-lives="5">5 Hearts</button>
+            <button type="button" class="pill-choice" data-lives="999">Unlimited (Practice)</button>
+          </div>
+        </div>
+
+        <!-- Sound Effects Toggle -->
+        <div class="switch-row">
+          <div>
+            <div class="setting-label">Sound Effects</div>
+            <div class="setting-desc">Play synthesizer audio chimes on success/error</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="teacherSoundToggle" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- Topics Filter Grid -->
+        <div class="setting-group">
+          <div class="setting-label">
+            <span>Filter Curriculum Topics</span>
+            <div style="display: flex; gap: 8px;">
+              <button type="button" id="selectAllTopicsBtn" style="background: none; border: none; color: var(--py-blue); font-size: 0.8rem; cursor: pointer; text-decoration: underline;">Select All</button>
+              <button type="button" id="clearAllTopicsBtn" style="background: none; border: none; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; text-decoration: underline;">Clear</button>
+            </div>
+          </div>
+          <div id="topicsFilterGrid" class="topic-grid">
+            <!-- Populated via questions.js TOPICS_LIST -->
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button id="cancelTeacherModalBtn" class="btn btn-secondary">Cancel</button>
+        <button id="applyTeacherSettingsBtn" class="btn btn-primary">Apply &amp; Start Game</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       Final Results & Performance Summary Modal
+       ============================================================ -->
+  <div id="resultsModal" class="modal-overlay results-modal" role="dialog" aria-modal="true" aria-labelledby="resultsTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="resultsTitle" class="modal-title">
+          <span>🏆</span> Game Completed!
+        </h3>
+      </div>
+
+      <div class="modal-body">
+        <!-- Hero Score Badge -->
+        <div class="results-hero">
+          <div id="perfBadge" class="performance-badge excellent">
+            ⭐ Excellent!
+          </div>
+          <p id="perfSubtext" class="performance-subtext">
+            Outstanding mastery of Class 9 Python concepts!
+          </p>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="results-metrics-grid">
+          <div class="metric-card">
+            <div id="finalScoreVal" class="metric-val">2450</div>
+            <div class="metric-label">Total Points</div>
+          </div>
+          <div class="metric-card">
+            <div id="finalAccuracyVal" class="metric-val">95%</div>
+            <div class="metric-label">Accuracy</div>
+          </div>
+          <div class="metric-card">
+            <div id="finalCorrectRatio" class="metric-val">19/20</div>
+            <div class="metric-label">Correct Answers</div>
+          </div>
+          <div class="metric-card">
+            <div id="finalStreakVal" class="metric-val">12</div>
+            <div class="metric-label">Highest Streak</div>
+          </div>
+        </div>
+
+        <!-- Diagnostic Topic Analysis (Areas for Improvement) -->
+        <div class="diagnostic-section">
+          <div class="diagnostic-title">
+            <span>📊</span>
+            <span>Curriculum Topic Breakdown &amp; Diagnostics</span>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">
+            See how well you mastered each Class 9 topic and areas to review:
+          </p>
+          <div id="topicDiagnosticList" class="topic-progress-list">
+            <!-- Dynamic topic bars rendered here -->
+          </div>
+        </div>
+
+        <!-- Answer Review List -->
+        <div class="review-section">
+          <div class="review-section-title">
+            <span>📝</span> Detailed Question Review &amp; Explanations
+          </div>
+          <div id="reviewList" class="review-list">
+            <!-- Dynamic questions review cards rendered here -->
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button id="resultsPlayAgainBtn" class="btn btn-primary" style="width: 100%;">
+          <span>🔄</span> Play Again
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="questions.js"></script>
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

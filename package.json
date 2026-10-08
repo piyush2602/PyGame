@@ -1,0 +1,19 @@
+{
+  "name": "python-code-builder",
+  "version": "1.0.0",
+  "description": "Interactive Python Drag-and-Drop Game for Class 9 Students",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [
+    "python",
+    "education",
+    "class-9",
+    "drag-and-drop",
+    "game",
+    "learning"
+  ],
+  "author": "",
+  "license": "MIT"
+}
