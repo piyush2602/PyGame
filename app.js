@@ -262,8 +262,18 @@ function createDropTarget(blankId, blankInfo) {
   box.addEventListener("dragleave", handleDragLeave);
   box.addEventListener("drop", handleDrop);
 
+  box.setAttribute("tabindex", "0");
+
   // Tap-to-place fallback event
   box.addEventListener("click", () => handleBlankClick(blankId));
+
+  // Keyboard accessibility
+  box.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleBlankClick(blankId);
+    }
+  });
 
   return box;
 }
@@ -333,18 +343,29 @@ function renderOptionsTray(question) {
       <span>${escapeHtml(choice)}</span>
     `;
 
-    // HTML5 Drag Events
+    // HTML5 Drag Events for Desktop
     chip.addEventListener("dragstart", handleDragStart);
     chip.addEventListener("dragend", handleDragEnd);
 
+    // Touch Drag Events for Mobile / Touch screens
+    chip.addEventListener("touchstart", handleTouchStart, { passive: false });
+
     // Tap/Click event for mobile/tablet fallback
     chip.addEventListener("click", () => handleChipClick(chip));
+
+    // Keyboard support
+    chip.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleChipClick(chip);
+      }
+    });
 
     dom.optionsContainer.appendChild(chip);
   });
 }
 
-// --- Drag and Drop Handlers ---
+// --- Drag and Drop Handlers (Desktop Mouse) ---
 let draggedValue = null;
 
 function handleDragStart(e) {
@@ -363,6 +384,7 @@ function handleDragEnd(e) {
   e.currentTarget.classList.remove("dragging");
   draggedValue = null;
   document.querySelectorAll(".blank-box").forEach(b => b.classList.remove("drag-over"));
+  ignoreClickUntil = Date.now() + 300;
 }
 
 function handleDragOver(e) {
@@ -388,8 +410,172 @@ function handleDrop(e) {
   placeOptionInBlank(blankId, value);
 }
 
+// ============================================================
+// Touch Drag and Drop Handlers (Mobile & Touch Devices)
+// ============================================================
+let activeTouchChip = null;
+let activeTouchValue = null;
+let touchStartX = 0;
+let touchStartY = 0;
+let isTouchDragging = false;
+let touchGhost = null;
+let ignoreClickUntil = 0;
+
+function handleTouchStart(e) {
+  if (gameState.isSolved) return;
+  if (!e.touches || e.touches.length > 1) return;
+
+  const chip = e.currentTarget;
+  activeTouchChip = chip;
+  activeTouchValue = chip.dataset.value;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  isTouchDragging = false;
+}
+
+function handleGlobalTouchMove(e) {
+  if (!activeTouchChip || !e.touches || e.touches.length === 0) return;
+
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - touchStartX;
+  const deltaY = touch.clientY - touchStartY;
+  const distance = Math.hypot(deltaX, deltaY);
+
+  // If moved past drag threshold, activate touch drag mode
+  if (!isTouchDragging && distance > 8) {
+    if (gameState.isSolved) {
+      cleanupTouchDrag();
+      return;
+    }
+    isTouchDragging = true;
+
+    // Deselect any previously tapped chip
+    if (gameState.selectedChipForTap) {
+      gameState.selectedChipForTap.classList.remove("selected-for-tap");
+      gameState.selectedChipForTap = null;
+    }
+
+    // Create elevated floating clone that follows finger
+    touchGhost = document.createElement("div");
+    touchGhost.className = "draggable-chip touch-drag-ghost";
+    touchGhost.innerHTML = activeTouchChip.innerHTML;
+    document.body.appendChild(touchGhost);
+
+    activeTouchChip.classList.add("dragging");
+    window.soundFx.playPop();
+    if (navigator.vibrate) {
+      try { navigator.vibrate(15); } catch (_) {}
+    }
+  }
+
+  if (isTouchDragging) {
+    // Prevent screen scroll while dragging code block
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+
+    // Update ghost position directly to finger touch coords
+    if (touchGhost) {
+      touchGhost.style.left = `${touch.clientX}px`;
+      touchGhost.style.top = `${touch.clientY}px`;
+    }
+
+    // Highlight hovered drop target in real-time
+    const hoveredBlank = findBlankUnderTouch(touch.clientX, touch.clientY);
+    document.querySelectorAll(".blank-box").forEach(box => {
+      if (box === hoveredBlank) {
+        box.classList.add("drag-over");
+      } else {
+        box.classList.remove("drag-over");
+      }
+    });
+  }
+}
+
+function handleGlobalTouchEnd(e) {
+  if (!activeTouchChip) return;
+
+  if (isTouchDragging) {
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+
+    const touch = e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : null;
+    const targetBlank = touch ? findBlankUnderTouch(touch.clientX, touch.clientY) : null;
+
+    if (targetBlank && activeTouchValue) {
+      const blankId = parseInt(targetBlank.dataset.blankId, 10);
+      placeOptionInBlank(blankId, activeTouchValue);
+    }
+
+    // Ignore synthetic click event fired right after touch release
+    ignoreClickUntil = Date.now() + 450;
+  }
+
+  cleanupTouchDrag();
+}
+
+function handleGlobalTouchCancel() {
+  cleanupTouchDrag();
+}
+
+function cleanupTouchDrag() {
+  if (touchGhost && touchGhost.parentNode) {
+    touchGhost.parentNode.removeChild(touchGhost);
+  }
+  touchGhost = null;
+
+  // Clean any rogue ghosts
+  document.querySelectorAll(".touch-drag-ghost").forEach(el => el.remove());
+
+  if (activeTouchChip) {
+    activeTouchChip.classList.remove("dragging");
+  }
+  activeTouchChip = null;
+  activeTouchValue = null;
+  isTouchDragging = false;
+
+  document.querySelectorAll(".blank-box").forEach(b => b.classList.remove("drag-over"));
+}
+
+function findBlankUnderTouch(x, y) {
+  // 1. Direct hit-test using elementFromPoint (ghost has pointer-events: none)
+  const elem = document.elementFromPoint(x, y);
+  if (elem) {
+    const blank = elem.closest(".blank-box");
+    if (blank) return blank;
+  }
+
+  // 2. Proximity tolerance hit-test for comfortable finger drops on mobile
+  const allBlanks = document.querySelectorAll(".blank-box");
+  const TOLERANCE = 28;
+  let closestBlank = null;
+  let minDistance = Infinity;
+
+  allBlanks.forEach(blank => {
+    const rect = blank.getBoundingClientRect();
+    if (
+      x >= rect.left - TOLERANCE &&
+      x <= rect.right + TOLERANCE &&
+      y >= rect.top - TOLERANCE &&
+      y <= rect.bottom + TOLERANCE
+    ) {
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dist = Math.hypot(x - centerX, y - centerY);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestBlank = blank;
+      }
+    }
+  });
+
+  return closestBlank;
+}
+
 // --- Tap to Place / Click Fallback ---
 function handleChipClick(chipElement) {
+  if (Date.now() < ignoreClickUntil) return;
   if (gameState.isSolved) return;
 
   window.soundFx.playPop();
@@ -416,6 +602,7 @@ function handleChipClick(chipElement) {
 }
 
 function handleBlankClick(blankId) {
+  if (Date.now() < ignoreClickUntil) return;
   if (gameState.isSolved) return;
 
   // Case 1: An option is actively selected via tap -> place it!
@@ -804,6 +991,11 @@ function initTeacherModalTopics() {
 }
 
 function bindGlobalEvents() {
+  // Global Touch Drag Tracking for Mobile & Touch Screens
+  window.addEventListener("touchmove", handleGlobalTouchMove, { passive: false });
+  window.addEventListener("touchend", handleGlobalTouchEnd, { passive: false });
+  window.addEventListener("touchcancel", handleGlobalTouchCancel, { passive: false });
+
   // Next Question Button
   dom.nextQuestionBtn.addEventListener("click", () => {
     gameState.currentIndex++;
