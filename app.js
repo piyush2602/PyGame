@@ -636,11 +636,12 @@ function placeOptionInBlank(blankId, value) {
   targetBox.innerHTML = `<span>${escapeHtml(value)}</span>`;
   targetBox.className = "blank-box filled";
 
-  window.soundFx.playPop();
-
-  // If single blank question, evaluate immediately!
+  // If single blank question, evaluate immediately (correct/wrong sound plays with 0ms delay)
   if (gameState.currentQuestion.blanks.length === 1) {
     evaluateQuestion();
+  } else {
+    // For multi-blank questions, play pop on placement
+    window.soundFx.playPop();
   }
 }
 
